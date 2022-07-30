@@ -1,6 +1,10 @@
 import requests
 import json
 from datetime import datetime
+import os
+import math
+
+from config import cookies, headers
 
 
 class ProductNotFoundError(Exception):
@@ -14,82 +18,20 @@ class ProductNotFoundError(Exception):
         super().__init__(self._message)
 
 
+class NoItemsError(Exception):
+    """
+    Raise when total count of items equal zero.
+    """
+    def __init__(self, message='No items.'):
+        self._message = message
+        super().__init__(self._message)
+
+
 def get_data() -> None:
 
-    cookies = {
-        '__lhash_': '8fe8237428e21ec26117882bd937a2af',
-        'CACHE_INDICATOR': 'false',
-        'COMPARISON_INDICATOR': 'false',
-        'HINTS_FIO_COOKIE_NAME': '2',
-        'JSESSIONID': 'y3GJvljhyKWh1bB9xxbcJm9Q1GtQz9nQlgFJ3ZnQSnnSp39WQhsQ!1468540857',
-        'MVID_AB_SERVICES_DESCRIPTION': 'var2',
-        'MVID_ADDRESS_COMMENT_AB_TEST': '2',
-        'MVID_BLACK_FRIDAY_ENABLED': 'true',
-        'MVID_CALC_BONUS_RUBLES_PROFIT': 'false',
-        'MVID_CART_MULTI_DELETE': 'false',
-        'MVID_CATALOG_STATE': '1',
-        'MVID_CITY_ID': 'CityCZ_35604',
-        'MVID_FILTER_CODES': 'true',
-        'MVID_FILTER_TOOLTIP': '1',
-        'MVID_FLOCKTORY_ON': 'true',
-        'MVID_GEOLOCATION_NEEDED': 'true',
-        'MVID_GET_LOCATION_BY_DADATA': 'DaData',
-        'MVID_GIFT_KIT': 'true',
-        'MVID_GTM_DELAY': 'true',
-        'MVID_GUEST_ID': '21158711635',
-        'MVID_IS_NEW_BR_WIDGET': 'true',
-        'MVID_KLADR_ID': '5004100000000',
-        'MVID_LAYOUT_TYPE': '1',
-        'MVID_LP_HANDOVER': '2',
-        'MVID_LP_SOLD_VARIANTS': '3',
-        'MVID_MCLICK': 'true',
-        'MVID_MINI_PDP': 'true',
-        'MVID_MOBILE_FILTERS': 'false',
-        'MVID_NEW_ACCESSORY': 'true',
-        'MVID_NEW_DESKTOP_FILTERS': 'true',
-        'MVID_NEW_LK': 'true',
-        'MVID_NEW_LK_CHECK_CAPTCHA': 'true',
-        'MVID_NEW_LK_LOGIN': 'true',
-        'MVID_NEW_LK_OTP_TIMER': 'true',
-        'MVID_NEW_MBONUS_BLOCK': 'true',
-        'MVID_REGION_ID': '1',
-        'MVID_REGION_SHOP': 'S002',
-        'MVID_SERVICES': '111',
-        'MVID_SERVICES_MINI_BLOCK': 'var2',
-        'MVID_SMART_BANNER_BOTTOM': 'true',
-        'MVID_SUPER_FILTERS': 'false',
-        'MVID_TAXI_DELIVERY_INTERVALS_VIEW': 'new',
-        'MVID_TIMEZONE_OFFSET': '3',
-        'MVID_WEBP_ENABLED': 'true',
-        'NEED_REQUIRE_APPLY_DISCOUNT': 'true',
-        'PICKUP_SEAMLESS_AB_TEST': '2',
-        'PRESELECT_COURIER_DELIVERY_FOR_KBT': 'true',
-        'PROMOLISTING_WITHOUT_STOCK_AB_TEST': '2',
-        'bIPs': '-314595793',
-        'flacktory': 'no',
-        'searchType2': '2',
-        'MVID_ENVCLOUD': 'prod2',
-    }
-
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0',
-        'Accept': 'application/json',
-        'Accept-Language': 'en-US,en;q=0.5',
-        # 'Accept-Encoding': 'gzip, deflate, br',
-        'x-set-application-id': '3d673d81-b9d4-4496-a81d-0b86fb9852a0',
-        'Connection': 'keep-alive',
-        'Referer': 'https://www.mvideo.ru/noutbuki-planshety-komputery-8/noutbuki-118/f/skidka=da/tolko-v-nalichii=da',
-        # Requests sorts cookies= alphabetically
-        # 'Cookie': '__lhash_=8fe8237428e21ec26117882bd937a2af; CACHE_INDICATOR=false; COMPARISON_INDICATOR=false; HINTS_FIO_COOKIE_NAME=2; JSESSIONID=y3GJvljhyKWh1bB9xxbcJm9Q1GtQz9nQlgFJ3ZnQSnnSp39WQhsQ!1468540857; MVID_AB_SERVICES_DESCRIPTION=var2; MVID_ADDRESS_COMMENT_AB_TEST=2; MVID_BLACK_FRIDAY_ENABLED=true; MVID_CALC_BONUS_RUBLES_PROFIT=false; MVID_CART_MULTI_DELETE=false; MVID_CATALOG_STATE=1; MVID_CITY_ID=CityCZ_35604; MVID_FILTER_CODES=true; MVID_FILTER_TOOLTIP=1; MVID_FLOCKTORY_ON=true; MVID_GEOLOCATION_NEEDED=true; MVID_GET_LOCATION_BY_DADATA=DaData; MVID_GIFT_KIT=true; MVID_GTM_DELAY=true; MVID_GUEST_ID=21158711635; MVID_IS_NEW_BR_WIDGET=true; MVID_KLADR_ID=5004100000000; MVID_LAYOUT_TYPE=1; MVID_LP_HANDOVER=2; MVID_LP_SOLD_VARIANTS=3; MVID_MCLICK=true; MVID_MINI_PDP=true; MVID_MOBILE_FILTERS=false; MVID_NEW_ACCESSORY=true; MVID_NEW_DESKTOP_FILTERS=true; MVID_NEW_LK=true; MVID_NEW_LK_CHECK_CAPTCHA=true; MVID_NEW_LK_LOGIN=true; MVID_NEW_LK_OTP_TIMER=true; MVID_NEW_MBONUS_BLOCK=true; MVID_REGION_ID=1; MVID_REGION_SHOP=S002; MVID_SERVICES=111; MVID_SERVICES_MINI_BLOCK=var2; MVID_SMART_BANNER_BOTTOM=true; MVID_SUPER_FILTERS=false; MVID_TAXI_DELIVERY_INTERVALS_VIEW=new; MVID_TIMEZONE_OFFSET=3; MVID_WEBP_ENABLED=true; NEED_REQUIRE_APPLY_DISCOUNT=true; PICKUP_SEAMLESS_AB_TEST=2; PRESELECT_COURIER_DELIVERY_FOR_KBT=true; PROMOLISTING_WITHOUT_STOCK_AB_TEST=2; bIPs=-314595793; flacktory=no; searchType2=2; MVID_ENVCLOUD=prod2',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-origin',
-        # Requests doesn't support trailers
-        # 'TE': 'trailers',
-    }
 
     params = {
-        'categoryId': '118',
+        'categoryId': '205',
         'offset': '0',
         'limit': '24',
         'filterParams': [
@@ -99,88 +41,122 @@ def get_data() -> None:
         'doTranslit': 'true',
     }
 
-    response = requests.get('https://www.mvideo.ru/bff/products/listing', params=params, cookies=cookies, headers=headers).json()
-    products_ids = response.get('body').get('products')
+    if not os.path.exists('data'):
+        os.mkdir('data')
 
-    with open('product_ids.json', 'w') as file:
+    session = requests.Session()
+    response = session.get('https://www.mvideo.ru/bff/products/listing', params=params, cookies=cookies, headers=headers).json()
+
+    # Get items counts to calculate page numbers.
+    total_items = response.get('body').get('total')
+    if total_items is None:
+        raise NoItemsError()
+    pages_count = math.ceil(total_items / 24)
+    print(f'[INFO] Total positions - {total_items}. Total pages - {pages_count}.')
+    
+    products_ids = {}
+    products_description = {}
+    products_prices = {}
+
+    for i in range(pages_count):
+        offset = f'{i * 24}'
+
+        params = {
+            'categoryId': '205',
+            'offset': offset,
+            'limit': '24',
+            'filterParams': [
+                'WyJza2lka2EiLCIiLCJkYSJd',
+                'WyJ0b2xrby12LW5hbGljaGlpIiwiIiwiZGEiXQ==',
+            ],
+            'doTranslit': 'true',
+        }
+
+        response = session.get('https://www.mvideo.ru/bff/products/listing', params=params, cookies=cookies, headers=headers).json()
+        products_ids_list = response.get('body').get('products')
+        products_ids[i] = products_ids_list
+
+        json_data = {
+            'productIds': products_ids_list,
+            'mediaTypes': [
+                'images',
+            ],
+            'category': True,
+            'status': True,
+            'brand': True,
+            'propertyTypes': [
+                'KEY',
+            ],
+            'propertiesConfig': {
+                'propertiesPortionSize': 5,
+            },
+            'multioffer': False,
+        }
+
+        response = session.post('https://www.mvideo.ru/bff/product-details/list', 
+                cookies=cookies, headers=headers, json=json_data).json()
+        products_description[i] = response
+
+        products_ids_str = ','.join(products_ids_list)
+        params = {
+            'productIds': products_ids_str,
+            'addBonusRubles': 'true',
+            'isPromoApplied': 'true',
+        }
+
+        response = session.get('https://www.mvideo.ru/bff/products/prices', 
+                params=params, cookies=cookies, headers=headers).json()
+        material_prices = response.get('body').get('materialPrices')
+
+        for item in material_prices:
+            item_id = item.get('productId')
+            item_base_price = item.get('price').get('basePrice')
+            item_sale_price = item.get('price').get('salePrice')
+            item_bonus = item.get('bonusRubles').get('total')
+
+            products_prices[item_id] = {
+                    'item_basePrice': item_base_price,
+                    'item_salePrice': item_sale_price,
+                    'item_bonus': item_bonus
+                    }
+
+        print(f'[+] Finished {i + 1} of the {pages_count} pages.')
+
+    with open('data/product_ids.json', 'w') as file:
         json.dump(products_ids, file, indent=4, ensure_ascii=False)
 
-    json_data = {
-        'productIds': products_ids,
-        'mediaTypes': [
-            'images',
-        ],
-        'category': True,
-        'status': True,
-        'brand': True,
-        'propertyTypes': [
-            'KEY',
-        ],
-        'propertiesConfig': {
-            'propertiesPortionSize': 5,
-        },
-        'multioffer': False,
-    }
+    with open('data/product_description.json', 'w') as file:
+        json.dump(products_description, file, indent=4, ensure_ascii=False)
 
-    response = requests.post('https://www.mvideo.ru/bff/product-details/list',
-            cookies=cookies, headers=headers, json=json_data).json()
-
-    with open('items.json', 'w') as file:
-        json.dump(response, file, indent=4, ensure_ascii=False)
-
-    products_ids_str = ','.join(products_ids)
-    params = {
-        'productIds': products_ids_str,
-        'addBonusRubles': 'true',
-        'isPromoApplied': 'true',
-    }
-
-    response = requests.get('https://www.mvideo.ru/bff/products/prices', 
-            params=params, cookies=cookies, headers=headers).json()
-
-    with open('prices.json', 'w') as file:
-        json.dump(response, file, indent=4, ensure_ascii=False)
-
-    items_prices = {}
-    material_prices = response.get('body').get('materialPrices')
-    for item in material_prices:
-        item_id = item.get('productId')
-        item_base_price = item.get('price').get('basePrice')
-        item_sale_price = item.get('price').get('salePrice')
-        item_bonus = item.get('bonusRubles').get('total')
-
-        items_prices[item_id] = {
-                'item_basePrice': item_base_price,
-                'item_salePrice': item_sale_price,
-                'item_bonus': item_bonus
-                }
-
-        with open('items_prices.json', 'w') as file:
-            json.dump(items_prices, file, indent=4, ensure_ascii=False)
+    with open('data/product_prices.json', 'w') as file:
+        json.dump(products_prices, file, indent=4, ensure_ascii=False)
 
 
 def get_result() -> None:
-    with open('items.json') as file:
+    with open('data/product_description.json') as file:
         products_data = json.load(file)
 
-    with open('items_prices.json') as file:
+    with open('data/product_prices.json') as file:
         products_prices = json.load(file)
 
-    products_data = products_data.get('body').get('products')
+    for items in products_data.values():
+        products = items.get('body').get('products')
 
-    for item in products_data:
-        product_id = item.get('productId')
+        for item in products:
+            product_id = item.get('productId')
 
-        if product_id in products_prices:
-            prices = products_prices[product_id]
-        else:
-            raise ProductNotFoundError(product_id)
+            if product_id in products_prices:
+                prices = products_prices[product_id]
+            else:
+                raise ProductNotFoundError(product_id)
 
-        item['item_basePrices'] = prices.get('item_basePrice')
-        item['item_salePrice'] = prices.get('item_salePrice')
-        item['item_bonus'] = prices.get('item_bonus')
+            item['item_basePrices'] = prices.get('item_basePrice')
+            item['item_salePrice'] = prices.get('item_salePrice')
+            item['item_bonus'] = prices.get('item_bonus')
+            product_name = item.get('nameTranslit')
+            item['item_link'] = f'https://www.mvideo.ru/products/{product_name}-{product_id}'
 
-    with open('result.json', 'w') as file:
+    with open('data/result.json', 'w') as file:
         json.dump(products_data, file, indent=4, ensure_ascii=False)
 
 
