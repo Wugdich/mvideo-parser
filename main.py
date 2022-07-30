@@ -116,14 +116,19 @@ def get_data():
     with open('items.json', 'w') as file:
         json.dump(response, file, indent=4, ensure_ascii=False)
 
+    products_ids_str = ','.join(products_ids)
     params = {
-        'productIds': products_ids,
+        'productIds': products_ids_str,
         'addBonusRubles': 'true',
         'isPromoApplied': 'true',
     }
 
     response = requests.get('https://www.mvideo.ru/bff/products/prices', 
             params=params, cookies=cookies, headers=headers).json()
+
+    with open('prices.json', 'w') as file:
+        json.dump(response, file, indent=4, ensure_ascii=False)
+
 
 def main() -> None:
     get_data()
