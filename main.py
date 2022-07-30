@@ -1,8 +1,20 @@
 import requests
 import json
+from datetime import datetime
 
 
-def get_data():
+class ProductNotFoundError(Exception):
+    """
+    Raise when product id didn't find in json data.
+    """
+    def __init__(self, product_id: str, 
+            message='Product id didnt found in json data'):
+        self._product_id = product_id
+        self._message = f'{message} (id - {self._product_id}).'
+        super().__init__(self._message)
+
+
+def get_data() -> None:
 
     cookies = {
         '__lhash_': '8fe8237428e21ec26117882bd937a2af',
@@ -143,12 +155,42 @@ def get_data():
                 'item_bonus': item_bonus
                 }
 
-        with open('item_prices.json', 'w') as file:
+        with open('items_prices.json', 'w') as file:
             json.dump(items_prices, file, indent=4, ensure_ascii=False)
 
 
+def get_result() -> None:
+    with open('items.json') as file:
+        products_data = json.load(file)
+
+    with open('items_prices.json') as file:
+        products_prices = json.load(file)
+
+    products_data = products_data.get('body').get('products')
+
+    for item in products_data:
+        product_id = item.get('productId')
+
+        if product_id in products_prices:
+            prices = products_prices[product_id]
+        else:
+            raise ProductNotFoundError(product_id)
+
+        item['item_basePrices'] = prices.get('item_basePrice')
+        item['item_salePrice'] = prices.get('item_salePrice')
+        item['item_bonus'] = prices.get('item_bonus')
+
+    with open('result.json', 'w') as file:
+        json.dump(products_data, file, indent=4, ensure_ascii=False)
+
+
 def main() -> None:
+    cur_time = datetime.now().strftime('%H:%M:%S') 
+    print(f'>> {cur_time}. Start parsing.')
     get_data()
+    get_result()
+    cur_time = datetime.now().strftime('%H:%M:%S') 
+    print(f'>> {cur_time}. Parsing is finished.')
 
 
 if __name__ == '__main__':
