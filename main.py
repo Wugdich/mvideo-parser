@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 import os
 import math
+import pandas as pd
 
 from config import cookies, headers
 
@@ -150,23 +151,42 @@ def get_result() -> None:
             else:
                 raise ProductNotFoundError(product_id)
 
-            item['item_basePrices'] = prices.get('item_basePrice')
+            item['item_basePrice'] = prices.get('item_basePrice')
             item['item_salePrice'] = prices.get('item_salePrice')
             item['item_bonus'] = prices.get('item_bonus')
             product_name = item.get('nameTranslit')
-            item['item_link'] = f'https://www.mvideo.ru/products/{product_name}-{product_id}'
+            item['item_link'] = ('https://www.mvideo.ru/products/'
+                    f'{product_name}-{product_id}')
 
     with open('data/result.json', 'w') as file:
         json.dump(products_data, file, indent=4, ensure_ascii=False)
 
 
+def to_excel() -> None:
+    with open('data/result.json') as file:
+        json_result = json.load(file)
+    df_result = pd.DataFrame()
+    keys = ['productId', 'modelName', 'brandName', 'item_basePrices', 
+            'item_salePrice', 'item_bonus', 'item_link']
+
+    for i in range(len(json_result)):
+        for product in json_result.get(f'{i}').get('body').get('products'):
+            tmp_df = pd.DataFrame.from_dict(
+                    {key: [product[key]] for key in keys})
+            df_result = pd.concat([df_result, tmp_df], ignore_index=True)
+    df_result.to_excel('./data/result.xlsx')
+
+
+
 def main() -> None:
-    cur_time = datetime.now().strftime('%H:%M:%S') 
-    print(f'>> {cur_time}. Start parsing.')
-    get_data()
-    get_result()
-    cur_time = datetime.now().strftime('%H:%M:%S') 
-    print(f'>> {cur_time}. Parsing is finished.')
+#    cur_time = datetime.now().strftime('%H:%M:%S') 
+#    print(f'>> {cur_time}. Start parsing.')
+#    get_data()
+#    get_result()
+#    cur_time = datetime.now().strftime('%H:%M:%S') 
+#    print(f'>> {cur_time}. Parsing is finished.')
+    to_excel()
+    print(f'>> Parsed data transfer to xlsx file.')
 
 
 if __name__ == '__main__':
